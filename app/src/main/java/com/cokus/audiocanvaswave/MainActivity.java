@@ -63,9 +63,9 @@ public class MainActivity extends AppCompatActivity {
         }else {
             status.setText("停止录音");
             switchBtn.setText("开始录音");
-            initWaveView();
             waveCanvas.Stop();
             waveCanvas = null;
+            initWaveView();
         }
     }
 

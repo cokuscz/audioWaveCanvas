@@ -32,7 +32,7 @@ public class WaveCanvas {
     private boolean isWriting = false;// 录音线程控制标记
 
     private int line_off ;//上下边距的距离
-    public int rateX = 100;//X轴缩小的比例 控制x轴走的速度 数值越小 越快
+    public int rateX = 10;//控制多少帧取一帧
     public int rateY = 1; //  Y轴缩小的比例 默认为1
     public int baseLine = 0;// Y轴基线
     private AudioRecord audioRecord;
