@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.cokus.audiocanvaswave.MainActivity">
+
+    <com.cokus.wavelibrary.view.WaveSurfaceView
+        android:id="@+id/wavesfv"
+        android:layout_width="fill_parent"
+        android:layout_height="220dp"/>
+
+    <TextView
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_below="@+id/wavesfv"
+        android:id="@+id/status"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="未开始录音"/>
+
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/switchbtn"
+        android:layout_below="@+id/status"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="开始录音"/>
+    
+    <com.cokus.wavelibrary.view.WaveformView
+        android:layout_marginTop="10dp"
+        android:id="@+id/waveview"
+        android:layout_below="@+id/switchbtn"
+        android:layout_width="fill_parent"
+        android:layout_height="220dp" />
+
+</RelativeLayout>
