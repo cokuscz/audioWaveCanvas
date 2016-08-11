@@ -4,5 +4,5 @@
 demo目前还很简单，之后可能加入频谱绘制，唱歌比对等的功能。
 
 
-![image](https://github.com/cokuscz/audioWaveCanvas/ScreenShot/pre.png)
+![image](https://github.com/cokuscz/audioWaveCanvas/blob/master/ScreenShot/pre.png)
 
