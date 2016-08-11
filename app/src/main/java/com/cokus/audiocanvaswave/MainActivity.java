@@ -9,10 +9,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.cokus.wavelibrary.draw.WaveCanvas;
 import com.cokus.wavelibrary.utils.SamplePlayer;
 import com.cokus.wavelibrary.utils.SoundFile;
@@ -26,6 +27,7 @@ import butterknife.OnClick;
 
 /**
  *@author:cokus
+ *@email:czcoku@gmail.com
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -35,15 +37,16 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.waveview)WaveformView waveView;
     @BindView(R.id.play)Button playBtn;
 
-    private static final int frequency = 16000;// 设置音频采样率，44100是目前的标准，但是某些设备仍然支持22050，16000，11025
-    private static final int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;// 设置单声道声道
-    private static final int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;// 音频数据格式：每个样本16位
+    private static final int FREQUENCY = 16000;// 设置音频采样率，44100是目前的标准，但是某些设备仍然支持22050，16000，11025
+    private static final int CHANNELCONGIFIGURATION = AudioFormat.CHANNEL_IN_MONO;// 设置单声道声道
+    private static final int AUDIOENCODING = AudioFormat.ENCODING_PCM_16BIT;// 音频数据格式：每个样本16位
     public final static int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;// 音频获取源
     private int recBufSize;// 录音最小buffer大小
     private AudioRecord audioRecord;
     private WaveCanvas waveCanvas;
     public static final String DATA_DIRECTORY = Environment
             .getExternalStorageDirectory() + "/record/";
+    private String mFileName = "test";//文件名
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,10 +75,7 @@ public class MainActivity extends AppCompatActivity {
             }
                 break;
             case R.id.play:
-//                if (mPlayer != null){
-//                    mPlayer.release();
                    onPlay(0);
-//                }
                 break;
         }
     }
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        mFile = new File(DATA_DIRECTORY + "test.wav");
+        mFile = new File(DATA_DIRECTORY + mFileName + ".wav");
         mLoadingKeepGoing = true;
         // Load the sound file in a background thread
         mLoadSoundFileThread = new Thread() {
@@ -117,25 +117,18 @@ public class MainActivity extends AppCompatActivity {
                             finishOpeningSoundFile();
                         }
                     };
-
-                    mHandler.post(runnable);
+                    MainActivity.this.runOnUiThread(runnable);
                 }
             }
         };
         mLoadSoundFileThread.start();
     }
 
-    Handler mHandler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-        }
-    };
+
 
     float mDensity;
     /**waveview载入波形完成*/
     private void finishOpeningSoundFile() {
-        Log.e("test","complete load wav");
         waveView.setSoundFile(mSoundFile);
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -144,16 +137,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initAudio(){
-        recBufSize = AudioRecord.getMinBufferSize(frequency,
-                channelConfiguration, audioEncoding);// 录音组件
+        recBufSize = AudioRecord.getMinBufferSize(FREQUENCY,
+                CHANNELCONGIFIGURATION, AUDIOENCODING);// 录音组件
         audioRecord = new AudioRecord(AUDIO_SOURCE,// 指定音频来源，这里为麦克风
-                frequency, // 16000HZ采样频率
-                channelConfiguration,// 录制通道
-                audioEncoding,// 录制编码格式
+                FREQUENCY, // 16000HZ采样频率
+                CHANNELCONGIFIGURATION,// 录制通道
+                AUDIO_SOURCE,// 录制编码格式
                 recBufSize);// 录制缓冲区大小 //先修改
         waveCanvas = new WaveCanvas();
         waveCanvas.baseLine = waveSfv.getHeight() / 2;
-        waveCanvas.Start(audioRecord, recBufSize, waveSfv, "test", DATA_DIRECTORY, new Handler.Callback() {
+        waveCanvas.Start(audioRecord, recBufSize, waveSfv, mFileName, DATA_DIRECTORY, new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
                 return true;
@@ -167,14 +160,12 @@ public class MainActivity extends AppCompatActivity {
     private final int UPDATE_WAV = 100;
     /**播放音频，@param startPosition 开始播放的时间*/
     private synchronized void onPlay(int startPosition) {
+        if (mPlayer == null)
+            return;
         if (mPlayer != null && mPlayer.isPlaying()) {
             mPlayer.pause();
             updateTime.removeMessages(UPDATE_WAV);
         }
-        if (mPlayer == null) {
-            return;
-        }
-        try {
             mPlayStartMsec = waveView.pixelsToMillisecs(startPosition);
             mPlayEndMsec = waveView.pixelsToMillisecsTotal();
             mPlayer.setOnCompletionListener(new SamplePlayer.OnCompletionListener() {
@@ -183,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                     waveView.setPlayback(-1);
                     updateDisplay();
                     updateTime.removeMessages(UPDATE_WAV);
+                    Toast.makeText(getApplicationContext(),"播放完成",Toast.LENGTH_LONG).show();
                 }
             });
             mPlayer.seekTo(mPlayStartMsec);
@@ -190,8 +182,6 @@ public class MainActivity extends AppCompatActivity {
             Message msg = new Message();
             msg.what = UPDATE_WAV;
             updateTime.sendMessage(msg);
-        } catch (Exception e) {;
-        }
     }
 
     Handler updateTime = new Handler() {
@@ -205,8 +195,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateDisplay() {
             int now = mPlayer.getCurrentPosition();// nullpointer
             int frames = waveView.millisecsToPixels(now);
-            waveView.setPlayback(frames);
-            Log.e("time", waveView+"time"+now);
+            waveView.setPlayback(frames);//通过这个更新当前播放的位置
             if (now >= mPlayEndMsec ) {
                 waveView.setPlayFinish(1);
                 if (mPlayer != null && mPlayer.isPlaying()) {
@@ -216,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
             }else{
                 waveView.setPlayFinish(0);
             }
-        waveView.invalidate();
+            waveView.invalidate();//刷新真个视图
     }
 
 
