@@ -14,6 +14,7 @@ import android.media.AudioRecord;
 import android.os.AsyncTask;
 import android.os.Handler.Callback;
 import android.os.Message;
+import android.util.Log;
 import android.view.SurfaceView;
 import com.cokus.wavelibrary.utils.Pcm2Wav;
 import com.cokus.wavelibrary.view.WaveSurfaceView;
@@ -32,15 +33,14 @@ public class WaveCanvas {
     private boolean isWriting = false;// 录音线程控制标记
 
     private int line_off ;//上下边距的距离
-    public int rateX = 10;//控制多少帧取一帧
+    public int rateX = 30;//控制多少帧取一帧
     public int rateY = 1; //  Y轴缩小的比例 默认为1
     public int baseLine = 0;// Y轴基线
     private AudioRecord audioRecord;
     int recBufSize;
-    int sampleRateInHz = 16000;//同样采样率
-    private int marginRight=100;//波形图绘制距离右边的距离
+    private int marginRight=30;//波形图绘制距离右边的距离
     private int draw_time = 1000 / 200;//两次绘图间隔的时间
-    private float divider = 0.3f;//为了节约绘画时间，每0.3个像素画一个数据
+    private float divider = 0.1f;//为了节约绘画时间，每0.2个像素画一个数据
     long c_time;
     private String savePcmPath ;//保存pcm文件路径
 	private String saveWavPath;//保存wav文件路径
@@ -49,13 +49,15 @@ public class WaveCanvas {
 	private Paint paintLine;
 	private Paint mPaint;
 
-    
-    /**
+	private int readsize;
+
+
+	/**
      * 开始录音
      * @param audioRecord
      * @param recBufSize
      * @param sfv
-	 * @param audioName
+     * @param audioName
      */
     public void Start(AudioRecord audioRecord, int recBufSize, SurfaceView sfv
         ,String audioName,String path,Callback callback) {
@@ -94,8 +96,9 @@ public class WaveCanvas {
      * 停止录音
      */  
     public void Stop() {
+		Log.e("test","stop start");
+        isRecording = false;
 		audioRecord.stop();
-        isRecording = false;  
         //inBuf.clear();// 清除  
     }
 
@@ -140,11 +143,9 @@ public class WaveCanvas {
                 audioRecord.startRecording();// 开始录制
                 while (isRecording) {
                     // 从MIC保存数据到缓冲区  
-                    int readsize = audioRecord.read(buffer, 0,  
+                    readsize = audioRecord.read(buffer, 0,
                             recBufSize);
                     synchronized (inBuf) {
-	                    // 添加数据
-//	                	int len = readsize / rateX;
 	                    for (int i = 0; i < readsize; i += rateX) {
 	                    	inBuf.add(buffer[i]);
 	                    }
@@ -213,6 +214,8 @@ public class WaveCanvas {
          *            Y轴基线 
          */  
         void SimpleDraw(ArrayList<Short> buf, int baseLine) {
+			if (!isRecording)
+				return;
 			rateY = (65535 /2/ (sfv.getHeight()-line_off));
 
         	for (int i = 0; i < buf.size(); i++) {
@@ -225,23 +228,23 @@ public class WaveCanvas {
             	return;
            // canvas.drawColor(Color.rgb(241, 241, 241));// 清除背景  
             canvas.drawARGB(255, 239, 239, 239);
-            int start =(int) (buf.size() * divider);
+
+            int start =(int) ((buf.size())* divider);
             float py = baseLine;
             float y;
-
 
             if(sfv.getWidth() - start <= marginRight){//如果超过预留的右边距距离
             	start = sfv.getWidth() -marginRight;//画的位置x坐标
             }
 
-	        canvas.drawCircle(start, line_off/4, line_off/4, circlePaint);// 上圆
+			canvas.drawCircle(start, line_off/4, line_off/4, circlePaint);// 上圆
 	        canvas.drawCircle(start, sfv.getHeight()-line_off/4, line_off/4, circlePaint);// 下圆
 	        canvas.drawLine(start, 0, start, sfv.getHeight(), circlePaint);//垂直的线
 	        int height = sfv.getHeight()-line_off;
-	        
+
 	        canvas.drawLine(0, line_off/2, sfv.getWidth(), line_off/2, paintLine);//最上面的那根线
 			canvas.drawLine(0, height*0.5f+line_off/2, sfv.getWidth() ,height*0.5f+line_off/2, center);//中心线
-	        canvas.drawLine(0, sfv.getHeight()-line_off/2-1, sfv.getWidth(), sfv.getHeight()-line_off/2-1, paintLine);//最下面的那根线  
+	        canvas.drawLine(0, sfv.getHeight()-line_off/2-1, sfv.getWidth(), sfv.getHeight()-line_off/2-1, paintLine);//最下面的那根线
 //	         canvas.drawLine(0, height*0.25f+20, sfv.getWidth(),height*0.25f+20, paintLine);//第二根线
 //	         canvas.drawLine(0, height*0.75f+20, sfv.getWidth(),height*0.75f+20, paintLine);//第3根线
 

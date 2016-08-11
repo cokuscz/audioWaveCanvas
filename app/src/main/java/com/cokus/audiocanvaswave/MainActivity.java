@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         if(waveSfv != null)
         waveSfv.setLine_off(42);
+        waveView.setLine_offset(42);
     }
 
     @OnClick({R.id.switchbtn,R.id.play})
@@ -71,10 +72,10 @@ public class MainActivity extends AppCompatActivity {
             }
                 break;
             case R.id.play:
-                if (mPlayer != null){
-                    mPlayer.pause();
-                    mPlayer.start();
-                }
+//                if (mPlayer != null){
+//                    mPlayer.release();
+                   onPlay(0);
+//                }
                 break;
         }
     }
@@ -91,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     /** 载入wav文件显示波形 */
     private void loadFromFile() {
         try {
-            Thread.sleep(500);
+            Thread.sleep(500);//让文件写入完成后再载入波形 适当的休眠下
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -131,10 +132,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
-
-
-
     float mDensity;
     /**waveview载入波形完成*/
     private void finishOpeningSoundFile() {
@@ -154,14 +151,11 @@ public class MainActivity extends AppCompatActivity {
                 channelConfiguration,// 录制通道
                 audioEncoding,// 录制编码格式
                 recBufSize);// 录制缓冲区大小 //先修改
-//        audioRecord.release();
-
         waveCanvas = new WaveCanvas();
         waveCanvas.baseLine = waveSfv.getHeight() / 2;
         waveCanvas.Start(audioRecord, recBufSize, waveSfv, "test", DATA_DIRECTORY, new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
-
                 return true;
             }
         });
@@ -222,9 +216,6 @@ public class MainActivity extends AppCompatActivity {
             }else{
                 waveView.setPlayFinish(0);
             }
-
-
-//        waveView.setParameters(mStartPos, mEndPos, mOffset);
         waveView.invalidate();
     }
 

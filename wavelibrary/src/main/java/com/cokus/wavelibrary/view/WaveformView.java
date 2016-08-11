@@ -286,9 +286,10 @@ public class WaveformView extends View {
     protected void drawWaveformLine(Canvas canvas,
                                     int x, int y0, int y1,
                                     Paint paint) {
+
     	int pos = maxPos();
     	float rat =((float)getMeasuredWidth()/pos);
-        canvas.drawLine((int)(x*rat), y0*3/4+getMeasuredHeight()/8, (int)(x*rat), y1*3/4+getMeasuredHeight()/8, paint);
+        canvas.drawLine((int)(x*rat), y0, (int)(x*rat), y1, paint);
     }
     
     
@@ -352,9 +353,6 @@ public class WaveformView extends View {
             int integerSecsNew = (int) fractionalSecs;
             if (integerSecsNew != integerSecs) {
                 integerSecs = integerSecsNew;
-//                if (!onlyEveryFiveSecs || 0 == (integerSecs % 5)) {
-//                    canvas.drawLine(i, 0, i, measuredHeight, mGridPaint);
-//                }
             }
         }
         
@@ -366,12 +364,10 @@ public class WaveformView extends View {
                 i + start < mSelectionEnd) {
                 paint = mSelectedLinePaint;
             } else {
-//                drawWaveformLine(canvas, i, 0, measuredHeight,
-//                                 mUnselectedBkgndLinePaint);
                 paint = mUnselectedLinePaint;
             }
             paint.setColor(Color.rgb(39, 199, 175));
-            paint.setStrokeWidth(2);
+            paint.setStrokeWidth(1);
            
             drawWaveformLine(
                 canvas, i,
@@ -383,7 +379,6 @@ public class WaveformView extends View {
      	        canvas.drawCircle(i*getMeasuredWidth()/maxPos(), line_offset/4, line_offset/4, circlePaint);// 上圆
      	        canvas.drawCircle(i*getMeasuredWidth()/maxPos(), getMeasuredHeight()-line_offset/4, line_offset/4, circlePaint);// 下圆
      	        canvas.drawLine(i*getMeasuredWidth()/maxPos(), 0, i*getMeasuredWidth()/maxPos(), getMeasuredHeight(), circlePaint);//垂直的线
-            	//System.out.println("current"+mPlaybackPos);
             	//画正在播放的线
                 //canvas.drawLine(i*getMeasuredWidth()/maxPos(), 0, i*getMeasuredWidth()/maxPos(), measuredHeight, paint);
             }
@@ -397,7 +392,6 @@ public class WaveformView extends View {
         if (timecodeIntervalSecs / onePixelInSecs < 50) {
             timecodeIntervalSecs = 15.0;
         }
-
     }
     
 
