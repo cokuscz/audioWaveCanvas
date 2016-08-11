@@ -10,6 +10,7 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import com.cokus.wavelibrary.draw.WaveCanvas;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.switchbtn) Button switchBtn;
     @BindView(R.id.status)TextView status;
     @BindView(R.id.waveview)WaveformView waveView;
+    @BindView(R.id.play)Button playBtn;
 
     private static final int frequency = 16000;// 设置音频采样率，44100是目前的标准，但是某些设备仍然支持22050，16000，11025
     private static final int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;// 设置单声道声道
@@ -50,22 +52,30 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         if(waveSfv != null)
         waveSfv.setLine_off(42);
-
     }
 
-    @OnClick(R.id.switchbtn)
-    void click(){
-        //开始录音
-        if (waveCanvas == null || !waveCanvas.isRecording) {
-            status.setText("录音中...");
-            switchBtn.setText("停止录音");
-            initAudio();
-        }else {
-            status.setText("停止录音");
-            switchBtn.setText("开始录音");
-            waveCanvas.Stop();
-            waveCanvas = null;
-            initWaveView();
+    @OnClick({R.id.switchbtn,R.id.play})
+    void click(View view){
+        switch (view.getId()) {
+            case R.id.switchbtn:
+            if (waveCanvas == null || !waveCanvas.isRecording) {
+                status.setText("录音中...");
+                switchBtn.setText("停止录音");
+                initAudio();
+            } else {
+                status.setText("停止录音");
+                switchBtn.setText("开始录音");
+                waveCanvas.Stop();
+                waveCanvas = null;
+                initWaveView();
+            }
+                break;
+            case R.id.play:
+                if (mPlayer != null){
+                    mPlayer.pause();
+                    mPlayer.start();
+                }
+                break;
         }
     }
 
@@ -156,6 +166,66 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private int mPlayStartMsec;
+    private int mPlayEndMsec;
+    private final int UPDATE_WAV = 100;
+    /**播放音频，@param startPosition 开始播放的时间*/
+    private synchronized void onPlay(int startPosition) {
+        if (mPlayer != null && mPlayer.isPlaying()) {
+            mPlayer.pause();
+            updateTime.removeMessages(UPDATE_WAV);
+        }
+        if (mPlayer == null) {
+            return;
+        }
+        try {
+            mPlayStartMsec = waveView.pixelsToMillisecs(startPosition);
+            mPlayEndMsec = waveView.pixelsToMillisecsTotal();
+            mPlayer.setOnCompletionListener(new SamplePlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion() {
+                    waveView.setPlayback(-1);
+                    updateDisplay();
+                    updateTime.removeMessages(UPDATE_WAV);
+                }
+            });
+            mPlayer.seekTo(mPlayStartMsec);
+            mPlayer.start();
+            Message msg = new Message();
+            msg.what = UPDATE_WAV;
+            updateTime.sendMessage(msg);
+        } catch (Exception e) {;
+        }
+    }
+
+    Handler updateTime = new Handler() {
+        public void handleMessage(Message msg) {
+            updateDisplay();
+            updateTime.sendMessageDelayed(new Message(), 10);
+        };
+    };
+
+    /**更新updateview 中的播放进度*/
+    private void updateDisplay() {
+            int now = mPlayer.getCurrentPosition();// nullpointer
+            int frames = waveView.millisecsToPixels(now);
+            waveView.setPlayback(frames);
+            Log.e("time", waveView+"time"+now);
+            if (now >= mPlayEndMsec ) {
+                waveView.setPlayFinish(1);
+                if (mPlayer != null && mPlayer.isPlaying()) {
+                    mPlayer.pause();
+                    updateTime.removeMessages(UPDATE_WAV);
+                }
+            }else{
+                waveView.setPlayFinish(0);
+            }
+
+
+//        waveView.setParameters(mStartPos, mEndPos, mOffset);
+        waveView.invalidate();
     }
 
 

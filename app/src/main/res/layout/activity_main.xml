@@ -10,7 +10,7 @@
     <com.cokus.wavelibrary.view.WaveSurfaceView
         android:id="@+id/wavesfv"
         android:layout_width="fill_parent"
-        android:layout_height="220dp"/>
+        android:layout_height="120dp"/>
 
     <TextView
         android:layout_marginLeft="10dp"
@@ -34,6 +34,14 @@
         android:id="@+id/waveview"
         android:layout_below="@+id/switchbtn"
         android:layout_width="fill_parent"
-        android:layout_height="220dp" />
+        android:layout_height="120dp" />
+
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/play"
+        android:layout_below="@+id/waveview"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="播放录音"/>
 
 </RelativeLayout>
