@@ -15,7 +15,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.cokus.audiocanvaswave.util.MusicSimilarityUtil;
 import com.cokus.wavelibrary.draw.WaveCanvas;
 import com.cokus.wavelibrary.utils.SamplePlayer;
@@ -23,6 +22,9 @@ import com.cokus.wavelibrary.utils.SoundFile;
 import com.cokus.wavelibrary.view.WaveSurfaceView;
 import com.cokus.wavelibrary.view.WaveformView;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -89,7 +91,13 @@ public class MainActivity extends AppCompatActivity {
                    onPlay(0);
                 break;
             case R.id.socreaudio:
-               float sim =  MusicSimilarityUtil.getSimByCompareFile(DATA_DIRECTORY + mFileName + ".wav", DATA_DIRECTORY + mFileName + ".wav");
+                float sim = 0;
+                try {
+                    // new FileInputStream(new File(DATA_DIRECTORY + mFileName + ".wav"))
+                    sim = MusicSimilarityUtil.getScoreByCompareFile(getResources().getAssets().open("cock_a_2.wav"), getResources().getAssets().open("cock_a_1.wav"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Toast.makeText(MainActivity.this,sim+"",Toast.LENGTH_LONG).show();
                 break;
         }
@@ -208,7 +216,8 @@ public class MainActivity extends AppCompatActivity {
         };
     };
 
-    /**更新updateview 中的播放进度*/
+    /**更新upd
+     * ateview 中的播放进度*/
     private void updateDisplay() {
             int now = mPlayer.getCurrentPosition();// nullpointer
             int frames = waveView.millisecsToPixels(now);
