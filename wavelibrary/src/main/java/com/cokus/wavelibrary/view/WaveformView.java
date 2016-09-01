@@ -301,6 +301,8 @@ public class WaveformView extends View {
         int measuredHeight = getMeasuredHeight();
         int height =measuredHeight-line_offset;
 
+        canvas.drawARGB(255, 239, 239, 239);
+
             Paint centerLine = new Paint();
             centerLine.setColor(Color.rgb(39, 199, 175));
             canvas.drawLine(0, height*0.5f+line_offset/2, measuredWidth, height*0.5f+line_offset/2, centerLine);//中心线

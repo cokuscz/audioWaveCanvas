@@ -1,5 +1,6 @@
 package com.cokus.audiocanvaswave;
 
+import android.graphics.PixelFormat;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -9,11 +10,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.cokus.audiocanvaswave.util.MusicSimilarityUtil;
 import com.cokus.wavelibrary.draw.WaveCanvas;
 import com.cokus.wavelibrary.utils.SamplePlayer;
 import com.cokus.wavelibrary.utils.SoundFile;
@@ -36,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.status)TextView status;
     @BindView(R.id.waveview)WaveformView waveView;
     @BindView(R.id.play)Button playBtn;
+    @BindView(R.id.socreaudio)Button scoreBtn;
 
     private static final int FREQUENCY = 16000;// 设置音频采样率，44100是目前的标准，但是某些设备仍然支持22050，16000，11025
     private static final int CHANNELCONGIFIGURATION = AudioFormat.CHANNEL_IN_MONO;// 设置单声道声道
@@ -51,20 +55,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFormat(PixelFormat.TRANSLUCENT);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        if(waveSfv != null)
-        waveSfv.setLine_off(42);
+        if(waveSfv != null) {
+            waveSfv.setLine_off(42);
+            //解决surfaceView黑色闪动效果
+            waveSfv.setZOrderOnTop(true);
+            waveSfv.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        }
         waveView.setLine_offset(42);
     }
 
-    @OnClick({R.id.switchbtn,R.id.play})
+    @OnClick({R.id.switchbtn,R.id.play,R.id.socreaudio})
     void click(View view){
         switch (view.getId()) {
             case R.id.switchbtn:
             if (waveCanvas == null || !waveCanvas.isRecording) {
                 status.setText("录音中...");
                 switchBtn.setText("停止录音");
+                waveSfv.setVisibility(View.VISIBLE);
+                waveView.setVisibility(View.INVISIBLE);
                 initAudio();
             } else {
                 status.setText("停止录音");
@@ -76,6 +87,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.play:
                    onPlay(0);
+                break;
+            case R.id.socreaudio:
+               float sim =  MusicSimilarityUtil.getSimByCompareFile(DATA_DIRECTORY + mFileName + ".wav", DATA_DIRECTORY + mFileName + ".wav");
+                Toast.makeText(MainActivity.this,sim+"",Toast.LENGTH_LONG).show();
                 break;
         }
     }
@@ -92,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
     /** 载入wav文件显示波形 */
     private void loadFromFile() {
         try {
-            Thread.sleep(500);//让文件写入完成后再载入波形 适当的休眠下
+            Thread.sleep(300);//让文件写入完成后再载入波形 适当的休眠下
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -115,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
                     Runnable runnable = new Runnable() {
                         public void run() {
                             finishOpeningSoundFile();
+                            waveSfv.setVisibility(View.INVISIBLE);
+                            waveView.setVisibility(View.VISIBLE);
                         }
                     };
                     MainActivity.this.runOnUiThread(runnable);
