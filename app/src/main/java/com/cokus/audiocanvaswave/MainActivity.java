@@ -5,26 +5,24 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.cokus.audiocanvaswave.util.MusicSimilarityUtil;
+import com.cokus.audiocanvaswave.util.U;
 import com.cokus.wavelibrary.draw.WaveCanvas;
 import com.cokus.wavelibrary.utils.SamplePlayer;
 import com.cokus.wavelibrary.utils.SoundFile;
 import com.cokus.wavelibrary.view.WaveSurfaceView;
 import com.cokus.wavelibrary.view.WaveformView;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -50,8 +48,6 @@ public class MainActivity extends AppCompatActivity {
     private int recBufSize;// 录音最小buffer大小
     private AudioRecord audioRecord;
     private WaveCanvas waveCanvas;
-    public static final String DATA_DIRECTORY = Environment
-            .getExternalStorageDirectory() + "/record/";
     private String mFileName = "test";//文件名
 
     @Override
@@ -60,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setFormat(PixelFormat.TRANSLUCENT);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        U.createDirectory();
         if(waveSfv != null) {
             waveSfv.setLine_off(42);
             //解决surfaceView黑色闪动效果
@@ -94,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 float sim = 0;
                 try {
                     // new FileInputStream(new File(DATA_DIRECTORY + mFileName + ".wav"))
-                    sim = MusicSimilarityUtil.getScoreByCompareFile(getResources().getAssets().open("cock_a_2.wav"), getResources().getAssets().open("cock_a_1.wav"));
+                    sim = MusicSimilarityUtil.getScoreByCompareFile(getResources().getAssets().open("coku1.wav"), getResources().getAssets().open("coku2.wav"));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -119,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        mFile = new File(DATA_DIRECTORY + mFileName + ".wav");
+        mFile = new File(U.DATA_DIRECTORY + mFileName + ".wav");
         mLoadingKeepGoing = true;
         // Load the sound file in a background thread
         mLoadSoundFileThread = new Thread() {
@@ -171,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
                 recBufSize);// 录制缓冲区大小 //先修改
         waveCanvas = new WaveCanvas();
         waveCanvas.baseLine = waveSfv.getHeight() / 2;
-        waveCanvas.Start(audioRecord, recBufSize, waveSfv, mFileName, DATA_DIRECTORY, new Handler.Callback() {
+        waveCanvas.Start(audioRecord, recBufSize, waveSfv, mFileName, U.DATA_DIRECTORY, new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
                 return true;
