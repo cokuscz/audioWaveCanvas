@@ -30,4 +30,6 @@ dependencies {
     compile project(':wavelibrary')
     compile 'com.jakewharton:butterknife:8.2.1' //添加这行
     apt 'com.jakewharton:butterknife-compiler:8.2.1' //添加这行
+    compile 'com.github.hotchemi:permissionsdispatcher:2.1.3'
+    apt 'com.github.hotchemi:permissionsdispatcher-processor:2.1.3'
 }

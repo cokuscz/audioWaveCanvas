@@ -1,5 +1,7 @@
 package com.cokus.audiocanvaswave;
 
+import android.Manifest;
+import android.content.DialogInterface;
 import android.graphics.PixelFormat;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -7,6 +9,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -26,12 +29,19 @@ import java.io.IOException;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnNeverAskAgain;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
 
 
 /**
  *@author:cokus
  *@email:czcoku@gmail.com
  */
+@RuntimePermissions
 public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.wavesfv) WaveSurfaceView waveSfv;
@@ -158,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
         waveView.recomputeHeights(mDensity);
     }
 
+    @NeedsPermission(Manifest.permission.RECORD_AUDIO)
     private void initAudio(){
         recBufSize = AudioRecord.getMinBufferSize(FREQUENCY,
                 CHANNELCONGIFIGURATION, AUDIOENCODING);// 录音组件
@@ -174,7 +185,53 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
 
+
+    @OnShowRationale(Manifest.permission.RECORD_AUDIO)
+    void showRationaleForRecord(final PermissionRequest request){
+        new AlertDialog.Builder(this)
+                .setPositiveButton("好的", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        request.proceed();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        request.cancel();
+                    }
+                })
+                .setCancelable(false)
+                .setMessage("是否开启录音权限")
+                .show();
+    }
+
+    @OnPermissionDenied(Manifest.permission.RECORD_AUDIO)
+    void showRecordDenied(){
+        Toast.makeText(MainActivity.this,"拒绝录音权限将无法进行挑战",Toast.LENGTH_LONG).show();
+    }
+
+    @OnNeverAskAgain(Manifest.permission.RECORD_AUDIO)
+    void onRecordNeverAskAgain() {
+        new AlertDialog.Builder(this)
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // TODO: 2016/11/10 打开系统设置权限
+                        dialog.cancel();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .setCancelable(false)
+                .setMessage("您已经禁止了录音权限,是否现在去开启")
+                .show();
     }
 
     private int mPlayStartMsec;
