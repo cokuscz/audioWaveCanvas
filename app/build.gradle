@@ -5,8 +5,8 @@ apply plugin: 'com.android.application'
 
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.1'
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.cokus.audiocanvaswave"
@@ -26,7 +26,7 @@ apply plugin: 'com.neenbedankt.android-apt' //添加这行
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:appcompat-v7:25.0.0'
     compile project(':wavelibrary')
     compile 'com.jakewharton:butterknife:8.2.1' //添加这行
     apt 'com.jakewharton:butterknife-compiler:8.2.1' //添加这行

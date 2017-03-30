@@ -2,6 +2,7 @@ package com.cokus.audiocanvaswave;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -40,6 +41,9 @@ import permissions.dispatcher.RuntimePermissions;
 /**
  *@author:cokus
  *@email:czcoku@gmail.com
+ *
+ * 根据自己研究发现sfv不适合做这个波形实时绘制的例子，因为每次清屏要重新绘制，所以我想了想为啥不用view呢？
+ * 期待吧。
  */
 @RuntimePermissions
 public class MainActivity extends AppCompatActivity {
@@ -66,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setFormat(PixelFormat.TRANSLUCENT);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        U.createDirectory();
         if(waveSfv != null) {
             waveSfv.setLine_off(42);
             //解决surfaceView黑色闪动效果
@@ -74,7 +77,12 @@ public class MainActivity extends AppCompatActivity {
             waveSfv.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         }
         waveView.setLine_offset(42);
+        initPermission();
     }
+
+
+
+
 
     @OnClick({R.id.switchbtn,R.id.play,R.id.socreaudio})
     void click(View view){
@@ -86,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
                 waveSfv.setVisibility(View.VISIBLE);
                 waveView.setVisibility(View.INVISIBLE);
                 initAudio();
+                startAudio();
+
             } else {
                 status.setText("停止录音");
                 switchBtn.setText("开始录音");
@@ -95,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             }
                 break;
             case R.id.play:
-                   onPlay(0);
+                   onPlay(0);//播放 从头开始播放
                 break;
             case R.id.socreaudio:
                 float sim = 0;
@@ -168,15 +178,10 @@ public class MainActivity extends AppCompatActivity {
         waveView.recomputeHeights(mDensity);
     }
 
-    @NeedsPermission(Manifest.permission.RECORD_AUDIO)
-    private void initAudio(){
-        recBufSize = AudioRecord.getMinBufferSize(FREQUENCY,
-                CHANNELCONGIFIGURATION, AUDIOENCODING);// 录音组件
-        audioRecord = new AudioRecord(AUDIO_SOURCE,// 指定音频来源，这里为麦克风
-                FREQUENCY, // 16000HZ采样频率
-                CHANNELCONGIFIGURATION,// 录制通道
-                AUDIO_SOURCE,// 录制编码格式
-                recBufSize);// 录制缓冲区大小 //先修改
+    /**
+     * 开始录音
+     */
+    private void startAudio(){
         waveCanvas = new WaveCanvas();
         waveCanvas.baseLine = waveSfv.getHeight() / 2;
         waveCanvas.Start(audioRecord, recBufSize, waveSfv, mFileName, U.DATA_DIRECTORY, new Handler.Callback() {
@@ -187,8 +192,34 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 初始化权限
+     */
+    public void initPermission(){
+        MainActivityPermissionsDispatcher.initAudioWithCheck(this);
 
-    @OnShowRationale(Manifest.permission.RECORD_AUDIO)
+    }
+
+
+    /**
+     * 初始化录音  申请录音权限
+     */
+    @NeedsPermission({Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE})
+    public void initAudio(){
+        recBufSize = AudioRecord.getMinBufferSize(FREQUENCY,
+                CHANNELCONGIFIGURATION, AUDIOENCODING);// 录音组件
+        audioRecord = new AudioRecord(AUDIO_SOURCE,// 指定音频来源，这里为麦克风
+                FREQUENCY, // 16000HZ采样频率
+                CHANNELCONGIFIGURATION,// 录制通道
+                AUDIO_SOURCE,// 录制编码格式
+                recBufSize);// 录制缓冲区大小 //先修改
+        U.createDirectory();
+    }
+
+
+
+
+    @OnShowRationale({Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE})
     void showRationaleForRecord(final PermissionRequest request){
         new AlertDialog.Builder(this)
                 .setPositiveButton("好的", new DialogInterface.OnClickListener() {
@@ -208,12 +239,12 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    @OnPermissionDenied(Manifest.permission.RECORD_AUDIO)
+    @OnPermissionDenied({Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE})
     void showRecordDenied(){
         Toast.makeText(MainActivity.this,"拒绝录音权限将无法进行挑战",Toast.LENGTH_LONG).show();
     }
 
-    @OnNeverAskAgain(Manifest.permission.RECORD_AUDIO)
+    @OnNeverAskAgain({Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE})
     void onRecordNeverAskAgain() {
         new AlertDialog.Builder(this)
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {

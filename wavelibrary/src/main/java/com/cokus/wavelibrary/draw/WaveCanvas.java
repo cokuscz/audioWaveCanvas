@@ -33,14 +33,14 @@ public class WaveCanvas {
     private boolean isWriting = false;// 录音线程控制标记
 
     private int line_off ;//上下边距的距离
-    public int rateX = 30;//控制多少帧取一帧
+    public int rateX = 100;//控制多少帧取一帧
     public int rateY = 1; //  Y轴缩小的比例 默认为1
     public int baseLine = 0;// Y轴基线
     private AudioRecord audioRecord;
     int recBufSize;
     private int marginRight=30;//波形图绘制距离右边的距离
     private int draw_time = 1000 / 200;//两次绘图间隔的时间
-    private float divider = 0.1f;//为了节约绘画时间，每0.2个像素画一个数据
+    private float divider = 0.2f;//为了节约绘画时间，每0.2个像素画一个数据
     long c_time;
     private String savePcmPath ;//保存pcm文件路径
 	private String saveWavPath;//保存wav文件路径
@@ -247,17 +247,16 @@ public class WaveCanvas {
 	        canvas.drawLine(0, sfv.getHeight()-line_off/2-1, sfv.getWidth(), sfv.getHeight()-line_off/2-1, paintLine);//最下面的那根线
 //	         canvas.drawLine(0, height*0.25f+20, sfv.getWidth(),height*0.25f+20, paintLine);//第二根线
 //	         canvas.drawLine(0, height*0.75f+20, sfv.getWidth(),height*0.75f+20, paintLine);//第3根线
-
-            for (int i = 0; i < buf.size(); i++) {
-				y =buf.get(i)/rateY + baseLine;// 调节缩小比例，调节基准线
-
-                float x=(i) * divider;
-                if(sfv.getWidth() - (i-1) * divider <=marginRight){
-                	x = sfv.getWidth()-marginRight;
-                }
-				//画线的方式很多，你可以根据自己要求去画。这里只是为了简单
-				canvas.drawLine(x, y,  x,sfv.getHeight()-y, mPaint);//中间出波形
-            }  
+            Log.e("tst",buf.size()+"-------------total");
+//            for (int i = 0; i < buf.size(); i++) {
+//				y =buf.get(i)/rateY + baseLine;// 调节缩小比例，调节基准线
+//                float x=(i) * divider;
+//                if(sfv.getWidth() - (i-1) * divider <= marginRight){
+//                	x = sfv.getWidth()-marginRight;
+//                }
+//				//画线的方式很多，你可以根据自己要求去画。这里只是为了简单
+//				canvas.drawLine(x, y,  x,sfv.getHeight()-y, mPaint);//中间出波形
+//            }
             sfv.getHolder().unlockCanvasAndPost(canvas);// 解锁画布，提交画好的图像  
         }
     }
