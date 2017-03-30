@@ -247,16 +247,15 @@ public class WaveCanvas {
 	        canvas.drawLine(0, sfv.getHeight()-line_off/2-1, sfv.getWidth(), sfv.getHeight()-line_off/2-1, paintLine);//最下面的那根线
 //	         canvas.drawLine(0, height*0.25f+20, sfv.getWidth(),height*0.25f+20, paintLine);//第二根线
 //	         canvas.drawLine(0, height*0.75f+20, sfv.getWidth(),height*0.75f+20, paintLine);//第3根线
-            Log.e("tst",buf.size()+"-------------total");
-//            for (int i = 0; i < buf.size(); i++) {
-//				y =buf.get(i)/rateY + baseLine;// 调节缩小比例，调节基准线
-//                float x=(i) * divider;
-//                if(sfv.getWidth() - (i-1) * divider <= marginRight){
-//                	x = sfv.getWidth()-marginRight;
-//                }
-//				//画线的方式很多，你可以根据自己要求去画。这里只是为了简单
-//				canvas.drawLine(x, y,  x,sfv.getHeight()-y, mPaint);//中间出波形
-//            }
+            for (int i = 0; i < buf.size(); i++) {
+				y =buf.get(i)/rateY + baseLine;// 调节缩小比例，调节基准线
+                float x=(i) * divider;
+                if(sfv.getWidth() - (i-1) * divider <= marginRight){
+                	x = sfv.getWidth()-marginRight;
+                }
+				//画线的方式很多，你可以根据自己要求去画。这里只是为了简单
+				canvas.drawLine(x, y,  x,sfv.getHeight()-y, mPaint);//中间出波形
+            }
             sfv.getHolder().unlockCanvasAndPost(canvas);// 解锁画布，提交画好的图像  
         }
     }
