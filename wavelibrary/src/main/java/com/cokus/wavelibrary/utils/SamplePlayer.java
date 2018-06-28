@@ -18,9 +18,12 @@ package com.cokus.wavelibrary.utils;
 
 import java.nio.ShortBuffer;
 
+
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.util.Log;
+
 
 public class SamplePlayer {
     public interface OnCompletionListener {
@@ -53,7 +56,7 @@ public class SamplePlayer {
         if (bufferSize < mChannels * mSampleRate * 2) {
             bufferSize = mChannels * mSampleRate * 2;
         }
-        mBuffer = new short[bufferSize/2]; // bufferSize is in Bytes.
+        mBuffer = new short[bufferSize/2]; // 緩衝區大小是以字節為單位.
         mAudioTrack = new AudioTrack(
                 AudioManager.STREAM_MUSIC,
                 mSampleRate,
@@ -62,27 +65,30 @@ public class SamplePlayer {
                 mBuffer.length * 2,
                 AudioTrack.MODE_STREAM);
         // Check when player played all the given data and notify user if mListener is set.
-        mAudioTrack.setNotificationMarkerPosition(mNumSamples - 1);  // Set the marker to the end.
+        mAudioTrack.setNotificationMarkerPosition(mNumSamples - 1);  // Set the marker to the end.设定一个marker位置，当声音播放到这个位置时，就启动onMarkerReached 方法。
         mAudioTrack.setPlaybackPositionUpdateListener(
                 new AudioTrack.OnPlaybackPositionUpdateListener() {
-            @Override
-            public void onPeriodicNotification(AudioTrack track) {}
+                    @Override
+                    public void onPeriodicNotification(AudioTrack track) {
+                        //LogU.i("1", "1");
+                    }
 
-            @Override
-            public void onMarkerReached(AudioTrack track) {
-                stop();
-                if (mListener != null) {
-                    mListener.onCompletion();
-                }
-            }
-        });
+                    @Override
+                    public void onMarkerReached(AudioTrack track) {
+                        //LogU.i("2", "2");
+                        stop();
+                        if (mListener != null) {
+                            mListener.onCompletion();
+                        }
+                    }
+                });
         mPlayThread = null;
         mKeepPlaying = true;
         mListener = null;
     }
 
-    public SamplePlayer(SoundFile mSoundFile) {
-        this(mSoundFile.getSamples(), mSoundFile.getSampleRate(), mSoundFile.getChannels(), mSoundFile.getNumSamples());
+    public SamplePlayer(SoundFile sf) {
+        this(sf.getSamples(), sf.getSampleRate(), sf.getChannels(), sf.getNumSamples());
     }
 
     public void setOnCompletionListener(OnCompletionListener listener) {
@@ -101,6 +107,7 @@ public class SamplePlayer {
         if (isPlaying()) {
             return;
         }
+
         mKeepPlaying = true;
         mAudioTrack.flush();
         mAudioTrack.play();
@@ -112,17 +119,20 @@ public class SamplePlayer {
                 mSamples.position(position);
                 int limit = mNumSamples * mChannels;
                 while (mSamples.position() < limit && mKeepPlaying) {
+
+
                     int numSamplesLeft = limit - mSamples.position();
                     if(numSamplesLeft >= mBuffer.length) {
-                        mSamples.get(mBuffer);
+                        mSamples.get(mBuffer);//-从PCM文件中，以流的形式读出存放在 mBuffer 中，將此緩衝區的短路傳輸到給定的目標數組
                     } else {
                         for(int i=numSamplesLeft; i<mBuffer.length; i++) {
                             mBuffer[i] = 0;
                         }
-                        mSamples.get(mBuffer, 0, numSamplesLeft);
+                        mSamples.get(mBuffer, 0, numSamplesLeft);//取出shortBuffer中的short数组
                     }
-                    // TODO(nfaralli): use the write method that takes a ByteBuffer as argument.
-                    mAudioTrack.write(mBuffer, 0, mBuffer.length);
+                    // 使用以ByteBuffer為參數的write方法
+                    mAudioTrack.write(mBuffer, 0, mBuffer.length);//write是从你的buffer里取数据，write到audiotrack的缓冲中去，而且每次只能write有限的长度，因为缓冲空间是有限的
+
                 }
             }
         };
@@ -135,7 +145,7 @@ public class SamplePlayer {
             // mAudioTrack.write() should block if it cannot write.
         }
     }
-
+    int tag = 0;
     public void stop() {
         if (isPlaying() || isPaused()) {
             mKeepPlaying = false;
@@ -150,6 +160,20 @@ public class SamplePlayer {
             }
             mAudioTrack.flush();  // just in case...
         }
+        if(tag==0){ //First tag
+            mKeepPlaying = false;
+            mAudioTrack.pause();  // pause() stops the playback immediately.
+            mAudioTrack.stop();   // Unblock mAudioTrack.write() to avoid deadlocks.
+            if (mPlayThread != null) {
+                try {
+                    mPlayThread.join();
+                } catch (InterruptedException e) {
+                }
+                mPlayThread = null;
+            }
+            mAudioTrack.flush();  // just in case...
+            tag++; //add tag state
+        }
     }
 
     public void release() {
@@ -158,6 +182,7 @@ public class SamplePlayer {
     }
 
     public void seekTo(int msec) {
+        tag = 0;
         boolean wasPlaying = isPlaying();
         stop();
         mPlaybackStart = (int)(msec * (mSampleRate / 1000.0));
@@ -171,13 +196,6 @@ public class SamplePlayer {
     }
 
     public int getCurrentPosition() {
-    	int curPos = 0;
-    	try{
-    	curPos = (int)((mPlaybackStart + mAudioTrack.getPlaybackHeadPosition()) *
-                (1000.0 / mSampleRate));
-    	}catch(Exception e){
-//    	mAudioTrack.setNotificationMarkerPosition(mNumSamples - 1); 
-    	}
-        return curPos;
+        return (int)((mPlaybackStart + mAudioTrack.getPlaybackHeadPosition()) *  (1000.0 / mSampleRate));
     }
 }

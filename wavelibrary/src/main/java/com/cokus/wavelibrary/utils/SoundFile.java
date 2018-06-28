@@ -28,18 +28,16 @@ import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
 
-
-import android.annotation.SuppressLint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
-@SuppressLint("NewApi")
 public class SoundFile {
     private ProgressListener mProgressListener = null;
     private File mInputFile = null;
@@ -64,18 +62,17 @@ public class SoundFile {
     private int[] mFrameLens;
     private int[] mFrameOffsets;
     private float mNumFramesFloat;
-    
-    
+
+
 
     public float getmNumFramesFloat() {
-		return mNumFramesFloat;
-	}
-
-	// Progress listener interface.
+        return mNumFramesFloat;
+    }
+    // Progress listener interface.
     public interface ProgressListener {
         /**
          * Will be called by the SoundFile class periodically
-         * with values between 0.0 and 1.0.  Return true to continue
+         * with values between 0.0 and 1.0.  Return true to continue 值介於0.0和1.0之間。 返回true繼續
          * loading the file or recording the audio, and false to cancel or stop recording.
          */
         boolean reportProgress(double fractionComplete);
@@ -108,8 +105,8 @@ public class SoundFile {
     // Create and return a SoundFile object using the file fileName.
     public static SoundFile create(String fileName,
                                    ProgressListener progressListener)
-        throws java.io.FileNotFoundException,
-               IOException, InvalidInputException {
+            throws java.io.FileNotFoundException,
+            IOException, InvalidInputException {
         // First check that the file exists and that its extension is supported.
         File f = new File(fileName);
         if (!f.exists()) {
@@ -172,7 +169,7 @@ public class SoundFile {
 
     // Should be removed when the app will use directly the samples instead of the frames.
     public int getSamplesPerFrame() {
-        return 1024/2;  // just a fixed value here...
+        return 1024;  // just a fixed value here...
     }
 
     // Should be removed when the app will use directly the samples instead of the frames.
@@ -182,7 +179,14 @@ public class SoundFile {
 
     public ShortBuffer getSamples() {
         if (mDecodedSamples != null) {
-            return mDecodedSamples.asReadOnlyBuffer();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+                // Hack for Nougat where asReadOnlyBuffer fails to respect byte ordering.
+                // See https://code.google.com/p/android/issues/detail?id=223824
+                return mDecodedSamples;
+            } else {
+                return mDecodedSamples.asReadOnlyBuffer();
+            }
         } else {
             return null;
         }
@@ -197,8 +201,8 @@ public class SoundFile {
     }
 
     private void ReadFile(File inputFile)
-        throws java.io.FileNotFoundException,
-               IOException, InvalidInputException {
+            throws java.io.FileNotFoundException,
+            IOException, InvalidInputException {
         MediaExtractor extractor = new MediaExtractor();
         MediaFormat format = null;
         int i;
@@ -207,6 +211,7 @@ public class SoundFile {
         String[] components = mInputFile.getPath().split("\\.");
         mFileType = components[components.length - 1];
         mFileSize = (int)mInputFile.length();
+
         extractor.setDataSource(mInputFile.getPath());
         int numTracks = extractor.getTrackCount();
         // find and select the first audio track present in the file.
@@ -224,7 +229,7 @@ public class SoundFile {
         mSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
         // Expected total number of samples per channel.
         int expectedNumSamples =
-            (int)((format.getLong(MediaFormat.KEY_DURATION) / 1000000.f) * mSampleRate + 0.5f);
+                (int)((format.getLong(MediaFormat.KEY_DURATION) / 1000000.f) * mSampleRate + 0.5f);
 
         MediaCodec codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
         codec.configure(format, null, null, 0);
@@ -274,7 +279,7 @@ public class SoundFile {
                     tot_size_read += sample_size;
                     if (mProgressListener != null) {
                         if (!mProgressListener.reportProgress((float)(tot_size_read) / mFileSize)) {
-                            // We are asked to stop reading the file. Returning immediately. The
+                            // We are asked to stop reading the file. Returning immediately. The 停止閱讀文件
                             // SoundFile object is invalid and should NOT be used afterward!
                             extractor.release();
                             extractor = null;
@@ -289,6 +294,7 @@ public class SoundFile {
             }
 
             // Get decoded stream from the decoder output buffers.
+            // 解码数据为PCM 從解碼器輸出緩衝區獲取解碼流
             int outputBufferIndex = codec.dequeueOutputBuffer(info, 100);
             if (outputBufferIndex >= 0 && info.size > 0) {
                 if (decodedSamplesSize < info.size) {
@@ -356,7 +362,7 @@ public class SoundFile {
         mNumSamples = mDecodedBytes.position() / (mChannels * 2);  // One sample = 2 bytes.
         mDecodedBytes.rewind();
         mDecodedBytes.order(ByteOrder.LITTLE_ENDIAN);
-        mDecodedSamples = mDecodedBytes.asShortBuffer();
+        mDecodedSamples = mDecodedBytes.asShortBuffer();//把byte合成short文件   ---------------将音频数据存储在一个字节数组中，将其转换为big-endian短数组
         mAvgBitRate = (int)((mFileSize * 8) * ((float)mSampleRate / mNumSamples) / 1000);
 
         extractor.release();
@@ -365,10 +371,10 @@ public class SoundFile {
         codec.release();
         codec = null;
 
-        // Temporary hack to make it work with the old version.
+        //临时黑客使其与旧版本一起工作。
         mNumFrames = mNumSamples / getSamplesPerFrame();
+
         mNumFramesFloat = (float)mNumSamples / getSamplesPerFrame();
-        System.out.println(mNumSamples+"sstest"+getSamplesPerFrame()+"--"+mNumFramesFloat);
         if (mNumSamples % getSamplesPerFrame() != 0){
             mNumFrames++;
         }
@@ -404,15 +410,16 @@ public class SoundFile {
 
     private void RecordAudio() {
         if (mProgressListener ==  null) {
-            // A progress listener is mandatory here, as it will let us know when to stop recording.
+            // 進度偵聽器是強制性的，因為它將讓我們知道何時停止錄製。
             return;
         }
         mInputFile = null;
-        mFileType = "wav";
+        mFileType = "raw";
         mFileSize = 0;
-        mSampleRate = 16000;
+        mSampleRate = 44100;
         mChannels = 1;  // record mono audio.
         short[] buffer = new short[1024];  // buffer contains 1 mono frame of 1024 16 bits samples
+        // 获得满足条件的最小缓冲区大小
         int minBufferSize = AudioRecord.getMinBufferSize(
                 mSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         // make sure minBufferSize can contain at least 1 second of audio (16 bits sample).
@@ -425,7 +432,7 @@ public class SoundFile {
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
                 minBufferSize
-                );
+        );
 
         // Allocate memory for 20 seconds first. Reallocate later if more is needed.
         mDecodedBytes = ByteBuffer.allocate(20 * mSampleRate * 2);
@@ -629,8 +636,7 @@ public class SoundFile {
         buffer = new byte[4096];
         try {
             FileOutputStream outputStream = new FileOutputStream(outputFile);
-            outputStream.write(
-                    MP4Header.getMP4Header(mSampleRate, numChannels, frame_sizes, bitrate));
+            outputStream.write(MP4Header.getMP4Header(mSampleRate, numChannels, frame_sizes, bitrate));
             while (encoded_size - encodedBytes.position() > buffer.length) {
                 encodedBytes.get(buffer);
                 outputStream.write(buffer);
@@ -789,4 +795,6 @@ public class SoundFile {
         e.printStackTrace(new PrintWriter(writer));
         return writer.toString();
     }
+
+
 }

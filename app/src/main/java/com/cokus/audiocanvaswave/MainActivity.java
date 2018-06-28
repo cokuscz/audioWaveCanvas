@@ -81,9 +81,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-
     @OnClick({R.id.switchbtn,R.id.play,R.id.socreaudio})
     void click(View view){
         switch (view.getId()) {
